@@ -18,8 +18,6 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "sun-devil-circle-dev-key-2024")
 
 # AI Configuration - Set defaults so AI works out of the box
-if not os.environ.get("CEREBRAS_API_KEY"):
-    os.environ["CEREBRAS_API_KEY"] = "csk-kyp53f5c5ev35p9hxjf8txpd2xdmf4ne4v3f3venh5t28kpy"
 if not os.environ.get("LIVE_AI"):
     os.environ["LIVE_AI"] = "1"
 
@@ -1017,8 +1015,33 @@ def call_live_ai(endpoint, payload):
     return None
 
 
+import time
+AI_RATE_LIMITS = {}
+
+def check_rate_limit(ip_address, limit=5, window_seconds=60):
+    """Simple in-memory rate limiting."""
+    now = time.time()
+    if ip_address not in AI_RATE_LIMITS:
+        AI_RATE_LIMITS[ip_address] = []
+    
+    AI_RATE_LIMITS[ip_address] = [t for t in AI_RATE_LIMITS[ip_address] if now - t < window_seconds]
+    
+    if len(AI_RATE_LIMITS[ip_address]) >= limit:
+        return False
+        
+    AI_RATE_LIMITS[ip_address].append(now)
+    return True
+
 def call_ai_api(prompt, max_tokens=300):
     """Call Cerebras AI API for text generation."""
+    try:
+        from flask import request
+        if not check_rate_limit(request.remote_addr, limit=5, window_seconds=60):
+            print("Rate limit exceeded for AI API")
+            return None
+    except Exception:
+        pass
+
     if os.environ.get("LIVE_AI") != "1":
         return None
 
