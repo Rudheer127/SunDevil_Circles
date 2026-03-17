@@ -642,6 +642,8 @@ def embed_text(text):
     if os.environ.get("LIVE_AI") != "1":
         return None
 
+    # Semantic matching requires a Hugging Face token to generate embeddings.
+    # We rely on the HF_TOKEN environment variable. If not set, it gracefully falls back to keyword matching.
     hf_token = os.environ.get("HF_TOKEN")
     if not hf_token:
         return None
@@ -1036,8 +1038,14 @@ def call_ai_api(prompt, max_tokens=300):
     """Call Cerebras AI API for text generation."""
     try:
         from flask import request
-        if not check_rate_limit(request.remote_addr, limit=5, window_seconds=60):
-            print("Rate limit exceeded for AI API")
+        client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+        if client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+        else:
+            client_ip = "unknown"
+            
+        if not check_rate_limit(client_ip, limit=10, window_seconds=60):
+            print(f"Rate limit exceeded for AI API from {client_ip}")
             return None
     except Exception:
         pass
@@ -1109,44 +1117,40 @@ RESOURCES: [comma separated numbers, e.g. 1, 5, 8]"""
     response = call_ai_api(prompt, max_tokens=500)
 
     if response:
-        # Parse message, suggestions, and resources
+        # Clean up markdown formatting and parse safely
+        import re
+        clean_response = response.replace("**", "")
+        
         empathetic_message = ""
         suggestions = []
         resource_indices = []
         
         # Extract Message
-        if "MESSAGE:" in response:
-            parts = response.split("SUGGESTIONS:")
-            if len(parts) >= 2:
-                empathetic_message = parts[0].replace("MESSAGE:", "").strip()
-                remaining = parts[1]
-                
-                # Extract Suggestions and Resources
-                if "RESOURCES:" in remaining:
-                    sugg_parts = remaining.split("RESOURCES:")
-                    suggestion_text = sugg_parts[0]
-                    resource_text = sugg_parts[1].strip()
-                    
-                    # Parse Suggestions
-                    lines = suggestion_text.split('\n')
-                    for line in lines:
-                        line = line.strip()
-                        if line and len(line) > 3:
-                            if line[0].isdigit() and '.' in line[:3]:
-                                line = line.split('.', 1)[1].strip()
-                            if line:
-                                suggestions.append(line)
-
-                    # Parse Resource Indices
-                    try:
-                        # Extract numbers using regex to handle various formats
-                        import re
-                        numbers = re.findall(r'\d+', resource_text)
-                        resource_indices = [int(n) - 1 for n in numbers if n.isdigit()] # Convert 1-based to 0-based
-                        # Filter valid indices
-                        resource_indices = [idx for idx in resource_indices if 0 <= idx < len(ASU_RESOURCES)]
-                    except Exception:
-                        pass
+        message_match = re.search(r'MESSAGE:\s*(.*?)(?=SUGGESTIONS:|$)', clean_response, re.DOTALL)
+        if message_match:
+            empathetic_message = message_match.group(1).strip()
+            
+        # Extract Suggestions
+        sugg_match = re.search(r'SUGGESTIONS:\s*(.*?)(?=RESOURCES:|$)', clean_response, re.DOTALL)
+        if sugg_match:
+            suggestion_text = sugg_match.group(1).strip()
+            for line in suggestion_text.split('\n'):
+                line = line.strip()
+                if line and len(line) > 3:
+                    if line[0].isdigit() and '.' in line[:3]:
+                        line = line.split('.', 1)[1].strip()
+                    elif line.startswith('-') or line.startswith('*'):
+                        line = line[1:].strip()
+                    if line:
+                        suggestions.append(line)
+                        
+        # Extract Resources
+        res_match = re.search(r'RESOURCES:\s*(.*)', clean_response, re.DOTALL)
+        if res_match:
+            resource_text = res_match.group(1).strip()
+            numbers = re.findall(r'\d+', resource_text)
+            resource_indices = [int(n) - 1 for n in numbers if n.isdigit()]
+            resource_indices = [idx for idx in resource_indices if 0 <= idx < len(ASU_RESOURCES)]
         
         if empathetic_message or suggestions:
             return {
@@ -1186,8 +1190,9 @@ Answer:"""
     if response:
         # Clean up the response
         answer = response.strip()
-        if answer.startswith("Answer:"):
-            answer = answer[7:].strip()
+        clean_answer = answer.replace("**", "")
+        if clean_answer.lower().startswith("answer:"):
+            answer = clean_answer[7:].strip()
         if answer:
             return answer
 
