@@ -1126,12 +1126,12 @@ RESOURCES: [comma separated numbers, e.g. 1, 5, 8]"""
         resource_indices = []
         
         # Extract Message
-        message_match = re.search(r'MESSAGE:\s*(.*?)(?=SUGGESTIONS:|$)', clean_response, re.DOTALL)
+        message_match = re.search(r'MESSAGE:\s*(.*?)(?=SUGGESTIONS:|$)', clean_response, re.DOTALL | re.IGNORECASE)
         if message_match:
             empathetic_message = message_match.group(1).strip()
             
         # Extract Suggestions
-        sugg_match = re.search(r'SUGGESTIONS:\s*(.*?)(?=RESOURCES:|$)', clean_response, re.DOTALL)
+        sugg_match = re.search(r'SUGGESTIONS:\s*(.*?)(?=RESOURCES:|$)', clean_response, re.DOTALL | re.IGNORECASE)
         if sugg_match:
             suggestion_text = sugg_match.group(1).strip()
             for line in suggestion_text.split('\n'):
@@ -1145,7 +1145,7 @@ RESOURCES: [comma separated numbers, e.g. 1, 5, 8]"""
                         suggestions.append(line)
                         
         # Extract Resources
-        res_match = re.search(r'RESOURCES:\s*(.*)', clean_response, re.DOTALL)
+        res_match = re.search(r'RESOURCES:\s*(.*)', clean_response, re.DOTALL | re.IGNORECASE)
         if res_match:
             resource_text = res_match.group(1).strip()
             numbers = re.findall(r'\d+', resource_text)
