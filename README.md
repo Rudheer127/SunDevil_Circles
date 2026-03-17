@@ -2,7 +2,13 @@
 
 **Live Platform**: [https://sun-devil-circle.vercel.app/](https://sun-devil-circle.vercel.app/)
 
-A peer support platform for ASU students, featuring AI-powered personalized suggestions and empathetic support.
+A peer support platform for ASU international freshmen, featuring AI-powered personalized suggestions and empathetic support. It matches students into small, private peer circles for non-clinical, trust-based support, focusing on transition challenges like homesickness and culture shock.
+
+### Origin & Recognition
+
+SunDevil Circles was created at the [hackathon name] at Arizona State University in [Month Year], where it was awarded [brief award description]. It is a guided peer-connection platform for international freshmen to reduce loneliness through small, private peer circles focused on transition challenges (such as homesickness and culture shock), with clear escalation pathways for more serious concerns.
+
+You can read the official write-up by the organizers here: [PASTE ORGANIZER ARTICLE LINK HERE – leave as a placeholder for me if you do not know it].
 
 ## Features
 - **Semantic Matching**: Connects students with peers and groups based on shared challenges, interests, and profile compatibility.
@@ -57,3 +63,7 @@ export CEREBRAS_API_KEY="your-api-key-here"
 - **Database**: SQLite
 - **AI**: Cerebras Cloud SDK (Llama 3.3 70B)
 - **Frontend**: HTML5, CSS3, Vanilla JavaScript
+
+### Authors
+
+- Rudheer Reddy Chintakuntla (primary author, GitHub: @Rudheer127)
