@@ -1064,7 +1064,7 @@ def call_ai_api(prompt, max_tokens=300):
 
         completion = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
-            model="llama-3.3-70b",
+            model="llama3.3-70b",
             max_completion_tokens=max_tokens,
             temperature=0.7,
             top_p=1,
