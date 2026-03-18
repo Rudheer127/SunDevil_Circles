@@ -12,6 +12,9 @@ from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify, g, flash
 from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 # Use a stable secret key for session persistence
